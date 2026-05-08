@@ -14,8 +14,8 @@ Options flow data encodes directional conviction in a way that equity price data
 
 ```
 collect.py      →    validate.py    →    enrich.py
-  CBOE bulk            drop bad           DTE, moneyness,
-  options data         ticks + IV         dollar volume
+  options chain        drop bad           DTE, moneyness,
+  ingestion            ticks + IV         dollar volume, delta
 
        ↓
   signals.py     →    backtest.py    →    results/
@@ -26,7 +26,7 @@ collect.py      →    validate.py    →    enrich.py
 Run the full pipeline for any date range:
 
 ```bash
-python pipeline.py --start 2023-01-01 --end 2024-01-01
+python pipeline.py --start 2026-01-01 --end 2026-05-08
 ```
 
 ---
@@ -69,9 +69,9 @@ Signals are evaluated using:
 
 ```
 options_flow_alpha/
-├── collect.py        # CBOE bulk file ingestion, parquet storage
+├── collect.py        # Options chain ingestion, parquet storage
 ├── validate.py       # IV filtering, zero-volume removal, spread flagging
-├── enrich.py         # DTE, moneyness, dollar volume computation
+├── enrich.py         # DTE, moneyness, dollar volume, Black-Scholes delta
 ├── signals.py        # Flow imbalance + skew signal construction
 ├── backtest.py       # IC, Sharpe, decay curve
 ├── pipeline.py       # End-to-end orchestrator with CLI
@@ -89,16 +89,31 @@ options_flow_alpha/
 
 | Source | Usage | Cost |
 |--------|-------|------|
-| [CBOE bulk files](https://www.cboe.com/us/options/market_statistics/historical_data/) | Historical options chain (2+ years) | Free |
-| [Unusual Whales API](https://unusualwhales.com) | Live flow data with Greeks | Free tier available |
-| yfinance | Daily OHLCV price data | Free |
+| [yfinance](https://github.com/ranaroussi/yfinance) | Options chain + OHLCV price data | Free |
+| [Databento](https://databento.com) | Historical options snapshots with Greeks (in progress) | Free tier available |
+| [Unusual Whales API](https://unusualwhales.com) | Live flow data | Free tier available |
+
+> **Data limitation:** The current yfinance implementation returns the current options chain snapshot regardless of the requested historical date. This means backtesting across a historical date range produces repeated snapshots rather than true historical data — the pipeline architecture and signal logic are correct, but IC and Sharpe results are not meaningful until the Databento integration is complete. Forward testing (collecting today's snapshot daily going forward) produces genuine time-series data immediately.
+
+---
+
+## Roadmap
+
+- [x] Options chain ingestion pipeline
+- [x] Validation and enrichment layer
+- [x] Delta-weighted flow imbalance signal
+- [x] Put/call skew signal
+- [x] IC and Sharpe backtesting framework
+- [ ] Databento integration for true historical data
+- [ ] Signal decay curve visualization
+- [ ] Live signal feed into options_dashboard
 
 ---
 
 ## Requirements
 
 ```bash
-pip install pandas numpy scipy requests yfinance pyarrow
+pip install -r requirements.txt
 ```
 
 ---
