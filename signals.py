@@ -14,7 +14,7 @@ def compute_flow_imbalance(df: pd.DataFrame) -> pd.DataFrame:
     Compute delta-weighted flow imbalance per ticker per day.
     Returns DataFrame with columns: DataDate, UnderlyingSymbol, flow_imbalance
     """
-    df['delta_volume'] = (df['Delta']*df['Volume'])
+    df['delta_volume'] = (df['Delta']*df['volume'])
     calls = df[df['PutCall']=='call']
     puts = df[df['PutCall']=='put']
     call_flow = calls.groupby(['DataDate', 'UnderlyingSymbol']).agg(
@@ -41,13 +41,13 @@ def compute_skew(df: pd.DataFrame) -> pd.DataFrame:
     otm_call = calls[calls['moneyness'] >= OTM_CALL_MIN]
     otm_put = puts[puts['moneyness'] <= OTM_PUT_MAX]
     otm_put_iv = otm_put.groupby(['DataDate', 'UnderlyingSymbol']).agg(
-        otm_put_iv=('IV', 'mean')
+        otm_put_iv=('impliedVolatility', 'mean')
     ).reset_index()
     otm_call_iv = otm_call.groupby(['DataDate', 'UnderlyingSymbol']).agg(
-        otm_call_iv=('IV', 'mean')
+        otm_call_iv=('impliedVolatility', 'mean')
     ).reset_index()
     atm_iv = atm.groupby(['DataDate', 'UnderlyingSymbol']).agg(
-        atm_iv=('IV', 'mean')
+        atm_iv=('impliedVolatility', 'mean')
     ).reset_index()
     results = pd.merge(otm_put_iv, otm_call_iv, on=['DataDate', 'UnderlyingSymbol'])
     results = pd.merge(results, atm_iv, on=['DataDate', 'UnderlyingSymbol'])
@@ -67,6 +67,8 @@ def compute_signals(df: pd.DataFrame) -> pd.DataFrame:
 
 if __name__ == "__main__":
     from pathlib import Path
-    df = pd.read_parquet(Path("data/raw/options/date=2024-01-02/options.parquet"))
+    from enrich import enrich
+    df = pd.read_parquet(Path("data/raw/options/date=2026-05-08/options.parquet"))
+    df = enrich(df)
     signals = compute_signals(df)
     print(signals.head())
