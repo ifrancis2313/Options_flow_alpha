@@ -4,3 +4,5 @@ scipy
 requests
 yfinance
 pyarrow
+python-dotenv
+databento
