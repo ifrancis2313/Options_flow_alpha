@@ -8,18 +8,18 @@ SPREAD_MAX = 0.5  # 50% bid-ask spread threshold
 
 
 def drop_zero_iv(df: pd.DataFrame) -> pd.DataFrame:
-    """Drop rows where IV is zero or above IV_MAX."""
+    """Drop rows where close price is zero — indicates bad tick."""
     before = len(df)
-    df = df[~((df['impliedVolatility'] == 0) | (df['impliedVolatility'] > IV_MAX))]
+    df = df[df['close'] > 0]
     dropped = before - len(df)
     logger.info(f"drop_zero_iv: dropped {dropped} rows")
     return df
 
 
 def drop_zero_volume(df: pd.DataFrame) -> pd.DataFrame:
-    """Drop rows where both volume and open interest are zero."""
+    """Drop rows where volume is zero."""
     before = len(df)
-    df = df[~((df['volume'] == 0) & (df['openInterest'] == 0))]
+    df = df[df['volume'] > 0]
     dropped = before - len(df)
     logger.info(f"drop_zero_volume: dropped {dropped} rows")
     return df
@@ -42,6 +42,6 @@ def validate(df: pd.DataFrame) -> pd.DataFrame:
 
 if __name__ == "__main__":
     from pathlib import Path
-    df = pd.read_parquet(Path("data/raw/options/date=2026-05-08/options.parquet"))
+    df = pd.read_parquet(Path("data/raw/options/date=2026-01-02/options.parquet"))
     df = validate(df)
     print(df.shape)

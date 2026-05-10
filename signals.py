@@ -68,7 +68,9 @@ def compute_signals(df: pd.DataFrame) -> pd.DataFrame:
 if __name__ == "__main__":
     from pathlib import Path
     from enrich import enrich
-    df = pd.read_parquet(Path("data/raw/options/date=2026-05-08/options.parquet"))
+    from validate import validate
+    df = pd.read_parquet(Path("data/raw/options/date=2026-01-02/options.parquet"))
+    df = validate(df)
     df = enrich(df)
     signals = compute_signals(df)
-    print(signals.head())
+    print(signals)
